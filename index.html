@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S' Reisemädchen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f0f4fd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0px 32px 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -30px;
+        }
+
+        /* ── Avatar ── */
+        .avatar {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 28px;
+            border: 4px solid #ffffff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* ── Heading ── */
+        h1 {
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        /* ── Bio ── */
+        .bio {
+            font-size: 16px;
+            color: #4a4a4a;
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+
+        /* ── Instagram Icon ── */
+        .social-icon {
+            margin-bottom: 28px;
+        }
+        .social-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* ── Turnstile ── */
+        .verify-box {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .cf-turnstile {
+            filter: drop-shadow(0 1px 3px rgba(74, 144, 217, 0.08));
+        }
+
+        /* ── Button ── */
+        .btn {
+            display: block;
+            width: 300px;
+            background-color: #1a6ec7;
+            color: #ffffff;
+            padding: 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.05rem;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.15s cubic-bezier(0,0,0.5,1);
+        }
+        .btn:hover { background-color: #1558a8; }
+        .btn:active { transform: scale(0.96); }
+
+        .hidden { display: none !important; }
+
+        /* ── Error ── */
+        .error {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #b71c1c;
+            background: rgba(183,28,28,0.08);
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: none;
+        }
+        .error.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- ── Avatar ─────────────────────────────────────────
+             Ersetze src="" mit deinem Base64-String:
+             src="data:image/jpeg;base64,/9j/4AAQ…=="
+             Oder gib einen normalen Pfad an: src="foto.jpg"
+        ───────────────────────────────────────────────────── -->
+        <img
+            class="avatar"
+            src="profilbild.jpg"
+            alt="Profilbild"
+        >
+
+        <h1>S ' Reisemädchen</h1>
+
+        <p class="bio">Setz dich hin und schnall dich an.<br>Es geht wieder nach oben. ✈️🍿</p>
+
+        <!-- Instagram Icon -->
+        <div class="social-icon">
+            <a href="https://www.instagram.com/sreisemaedchen" target="_blank" rel="noopener noreferrer">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill="#1a1a1a" stroke="none"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Turnstile -->
+        <div class="verify-box">
+            <div class="cf-turnstile"
+                 data-sitekey="0x4AAAAAADN59-0f2gbpKGDt"
+                 data-callback="onSuccess">
+            </div>
+        </div>
+
+        <!-- Button (hidden until verified) -->
+        <a id="target-btn" href="/api/go" target="_blank" rel="noopener noreferrer" class="btn hidden">
+            Follow my Journey
+        </a>
+
+        <div id="error-msg" class="error"></div>
+    </div>
+
+    <script>
+        async function onSuccess(token) {
+            try {
+                const res = await fetch('/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                if (!res.ok) throw new Error('Serverantwort fehlgeschlagen');
+
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('target-btn').classList.remove('hidden');
+                    clearError();
+                } else {
+                    showError(data.message || 'Verifizierung fehlgeschlagen.');
+                    resetTurnstile();
+                }
+            } catch (err) {
+                console.error('Verifikationsfehler:', err);
+                showError('Ein Fehler ist aufgetreten. Bitte erneut versuchen.');
+                resetTurnstile();
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function clearError() {
+            const el = document.getElementById('error-msg');
+            el.textContent = '';
+            el.classList.remove('show');
+        }
+
+        function resetTurnstile() {
+            if (window.turnstile) window.turnstile.reset();
+        }
+    </script>
+</body>
+</html>
